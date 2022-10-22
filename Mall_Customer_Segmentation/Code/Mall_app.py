@@ -55,7 +55,7 @@ from scipy.spatial import distance_matrix
 
 
 #import the data
-path = "C:/Users/33646/Desktop/Portefolio/Personnal-Project/Mall_Customer_Segmentation/Mall_Customers.csv"
+path = "C:/Users/33646/Documents/Portfolio/Mall_Customer_Segmentation/Data/Mall_Customers.csv"
 df = pd.read_csv(path)
 df2 = pd.read_csv(path)
 
