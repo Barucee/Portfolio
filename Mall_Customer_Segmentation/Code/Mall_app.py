@@ -28,6 +28,7 @@
 
 import pandas as pd
 import numpy as np
+import os
 import matplotlib.pyplot as plt
 import plotly as py
 from plotly.subplots import make_subplots
@@ -55,7 +56,8 @@ from scipy.spatial import distance_matrix
 
 
 #import the data
-path = "C:/Users/33646/Documents/Portfolio/Mall_Customer_Segmentation/Data/Mall_Customers.csv"
+
+path = os.path.abspath("../Data/Mall_Customers.csv")
 df = pd.read_csv(path)
 df2 = pd.read_csv(path)
 
