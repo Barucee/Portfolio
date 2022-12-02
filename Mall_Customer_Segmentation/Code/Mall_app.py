@@ -39,6 +39,8 @@ import seaborn as sns
 from cProfile import label
 from math import pi
 import streamlit as st
+from sklearnex import patch_sklearn
+
 
 
 #import machine learning model
@@ -54,10 +56,12 @@ from itertools import product
 from scipy.cluster import hierarchy 
 from scipy.spatial import distance_matrix 
 
+#Make the machine learning runnin quicker
+patch_sklearn()
 
 #import the data
 
-path = os.path.abspath(r"../Data/Mall_Customers.csv")
+path = os.path.abspath("../Data/Mall_Customers.csv")
 df = pd.read_csv(path)
 df2 = df.copy()
 

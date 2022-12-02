@@ -30,6 +30,8 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import os
 import math
+from sklearnex import patch_sklearn
+
 
 #import machine learning libraries
 from sklearn.linear_model import LogisticRegression
@@ -50,10 +52,13 @@ from sklearn.model_selection import train_test_split, GridSearchCV, cross_valida
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, roc_auc_score, confusion_matrix
 from sklearn.metrics import classification_report
 from sklearn.model_selection import KFold
+import os
 
+#Make the machine learning runnin quicker
+patch_sklearn()
 
 #import the dataset
-path = "C:/Users/33646/Documents/Portfolio/Diabetes/Data/diabetes.csv"
+path = os.path.abspath("../Data/diabetes.csv")
 print(path)
 df = pd.read_csv(path)
 df_raw = df.copy()

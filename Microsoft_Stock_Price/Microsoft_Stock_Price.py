@@ -46,7 +46,9 @@ from keras.layers import Dense, LSTM
 
 
 #Import DataSet
-df = pd.read_csv('C:/Users/33646/Desktop/Portefolio/Personnal-Project/Microsoft_Stock_Price/Microsoft_Stock.csv', parse_dates = ['Date'], index_col = 'Date')
+path = os.path.abspath("./Data/Microsoft_Stock.csv")
+
+df = pd.read_csv(path, parse_dates = ['Date'], index_col = 'Date')
 
 diff = df.Close.diff().dropna()
 result_adf = adfuller(df.Close)
