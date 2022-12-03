@@ -281,7 +281,11 @@ elif pages == "Setting of the models ⚙️" :
             
         elif information == "Accuracy Metrics":
             
-            st.dataframe(forecast_accuracy("ARIMA",Prediction_arima, test_arima))            
+            st.dataframe(forecast_accuracy("ARIMA",Prediction_arima, test_arima))
+    
+    elif model == "LSTM" :
+        
+        st.write("In work, I have to discover how to parallelize the fitting of different model of LSTM in order that it is not too much computing intensive")
         
 elif pages == "Forecasting 📈":
     
