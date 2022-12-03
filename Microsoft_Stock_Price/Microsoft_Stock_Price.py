@@ -53,17 +53,21 @@ pool = ThreadPool(processes=4)
 #Import DataSet - os.abspath() does not function with my streamlit app :
 path = "C:/Users/33646/Documents/GitHub/Portfolio/Microsoft_Stock_Price/Data/Microsoft_Stock.csv"
 
-#load the data with parallelization :
+#load the data with parallelization on different processors:
 @st.cache()
 def load_df(file_name):
-    df_xlsx = pd.read_csv(file_name)
-    return df_xlsx
+    df = pd.read_csv(file_name)
+    return df
 df = pool.apply_async(load_df, (path, )).get()
 
+#Transform the Date object as DateTime in order to better handle it
+df['Date'] = pd.to_datetime(df['Date'])
 
 # graph function :
 def graph_prediction(title
+                     ,Train_Date
                      ,Train
+                     ,Test_Date = None
                      ,Test = None
                      ,Prediction = None
                      ):
@@ -71,14 +75,16 @@ def graph_prediction(title
     plt.title(title)
     plt.xlabel("Date", fontsize=18)
     plt.ylabel("Close Price USD ($)", fontsize=18)
-    plt.plot(Train, color='blue', label='Test')
-    if Test is not None and Prediction is not None:
-        plt.plot(Test, color='green', label='Test')
-        plt.plot(Prediction, color='red', label='Test')
+    plt.plot(Train_Date,Train, color='blue', label='Test')
+    if Test is not None and Prediction is not None and Test_Date is not None:
+        plt.plot(Test_Date, Test, color='green', label='Test')
+        plt.plot(Test_Date, Prediction, color='red', label='Test')
         plt.legend(['Train', 'Test', 'Predictions'], loc='lower right')
     else :
-        plt.legend('stock price', loc='lower right')
+        plt.legend("Stock price", loc='lower right')
     return st.pyplot(fig)
+
+
 
 
 ############################ Data Transformation ############################
@@ -91,6 +97,9 @@ d_optimum = ndiffs(df.Close.dropna(),test="adf")
 n = int(len(df) * 0.8)
 train_arima = df.Close[:n]
 test_arima = df.Close[n:]
+Date_train_arima = df.Date[:n]
+Date_test_arima = df.Date[n:]
+
 
 scaler = MinMaxScaler(feature_range=(0,1))
 scaled_data = scaler.fit_transform(df.Close.values.reshape(-1,1))
@@ -105,6 +114,9 @@ for i in range(60, len(train_LSTM)):
         
 x_test_LSTM = []
 y_test_LSTM =  df.Close.values[n:]
+Date_test_LSTM = df.Date[n:]
+Date_train_LSTM = df.Date[:n]
+
 
 for i in range(60,len(test_LSTM)):
     x_test_LSTM.append(test_LSTM[i-60:i, 0])
@@ -139,10 +151,28 @@ def train_LSTM():
     return valid
 
 valid = train_LSTM()
+
+# Function which retrieve the accuracy metrics
+
+def forecast_accuracy(Model, forecast, actual):
+    mape = np.mean(np.abs(forecast - actual)/np.abs(actual))  # MAPE
+    me = np.mean(forecast - actual)             # ME
+    mae = np.mean(np.abs(forecast - actual))    # MAE
+    mpe = np.mean((forecast - actual)/actual)   # MPE
+    rmse = np.mean((forecast - actual)**2)**.5  # RMSE
+    corr = np.corrcoef(forecast, actual)[0,1]   # corr
+    mins = np.amin(np.hstack([forecast[:,None], 
+                              actual[:,None]]), axis=1)
+    maxs = np.amax(np.hstack([forecast[:,None], 
+                              actual[:,None]]), axis=1)
+    minmax = 1 - np.mean(mins/maxs)             # minmax
+    return(pd.DataFrame.from_dict({'Model':[Model], 'mape': [mape], 'me':[me],
+                                   'mae': [mae], 'mpe': [mpe], 'rmse':[rmse], 
+                                   'corr':[corr], 'minmax':[minmax]}))
     
 
 
-pages = st.sidebar.selectbox('Select the page', ['Introduction 🗺️', 'About the models 🧭', 'Forecasting 📈'])
+pages = st.sidebar.selectbox('Select the page', ['Introduction 🗺️', 'About the models 🧭', "Setting of the models ⚙️", 'Forecasting 📈'])
 
 if pages == "Introduction 🗺️":
     
@@ -150,9 +180,7 @@ if pages == "Introduction 🗺️":
     st.write("This Streamlit application will help you to predict the stock price of Microsoft.")
     st.write("To predict the price, we will use different model of machine learning and Deep Learning : ARIMA(ML) & LSTM(DL)\n")
     st.write("First, we will display the data and get some informations about the data.")
-    fig = px.line(df, x=df.index, y='Close', title='Microsoft Stock Price',labels={'Close':'Closing Price ($)'})
-    fig.update_layout(title_text='Microsoft Stock Price', title_x=0.5)
-    fig
+    graph_prediction("Visualization of the time serie", df['Date'],df["Close"])
     st.markdown(f"The dataframe begins at : {df.index.min()}, and finish at : {df.index.max()}.")
     st.markdown(f"The dataframe has {df.shape[0]} rows and {df.shape[1]} columns.")
     st.markdown(f"There are {df.isna().sum().sum()} missing values in the dataset.")
@@ -225,6 +253,36 @@ elif pages == "About the models 🧭":
         
         st.write("Choose a model")
         
+elif pages == "Setting of the models ⚙️" :
+    
+    model = st.sidebar.selectbox('Select the model', ['ARIMA', 'LSTM'])
+    
+    if model == "ARIMA":
+        
+        col1, col2 = st.columns(2)
+        p = col1.selectbox("Select the number of P", [0,1,2,3,4,5,6,7,8,9,10])
+        q = col2.selectbox("Select the number of Q", [0,1,2,3,4,5,6,7,8,9,10])
+            
+        arima_model = ARIMA(df.Close, order=(p,d_optimum,q))
+        result_ARIMA = arima_model.fit()
+        Prediction_arima = result_ARIMA.predict(len(train_arima), len(train_arima)+len(test_arima)-1, typ='levels')
+            
+        information = st.sidebar.selectbox("Select the information you want", ["Summary","Residuals","Accuracy Metrics"])
+            
+        if information == "Summary":
+            
+            st.write(result_ARIMA.summary())
+            
+        elif information == "Residuals":
+                
+            residuals = result_ARIMA.resid
+            fig = result_ARIMA.plot_diagnostics(figsize=(10,8))
+            st.pyplot(fig)
+            
+        elif information == "Accuracy Metrics":
+            
+            st.dataframe(forecast_accuracy("ARIMA",Prediction_arima, test_arima))            
+        
 elif pages == "Forecasting 📈":
     
     model = st.sidebar.selectbox('Select the model', ['ARIMA', 'LSTM'])
@@ -232,23 +290,21 @@ elif pages == "Forecasting 📈":
     if model == "ARIMA":
         
         col1, col2 = st.columns(2)
-        p = col1.selectbox("Select the number of P", [1,2,3,4,5,6,7,8,9,10])
-        q = col2.selectbox("Select the number of Q", [1,2,3,4,5,6,7,8,9,10])
+        p = col1.selectbox("Select the number of P", [0,1,2,3,4,5,6,7,8,9,10])
+        q = col2.selectbox("Select the number of Q", [0,1,2,3,4,5,6,7,8,9,10])
         arima_model = ARIMA(df.Close, order=(p,d_optimum,q))
         result_ARIMA = arima_model.fit()
         Prediction_arima = result_ARIMA.predict(len(train_arima), len(train_arima)+len(test_arima)-1, typ='levels')
         #plot fitted values
-        graph_prediction("Model ARIMA", train_arima, test_arima, Prediction_arima)
+        graph_prediction("Model ARIMA", Date_train_arima,train_arima, Date_test_arima,test_arima, Prediction_arima)
+        st.write(result_ARIMA.summary())
         
     else :
         
         #Visualize the data
-        graph_prediction("Model LSTM",train, valid["Close"], valid["Predictions"])
+        graph_prediction("Model LSTM", Date_train_LSTM,train, Date_test_LSTM, valid["Close"], valid["Predictions"])
         
 else :
     
     st.write("Choose a page")
     
-    def graph(title):
-        plt.figure(figsize=(16,8))
-        plt.title(title)
