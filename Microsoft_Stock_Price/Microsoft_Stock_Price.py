@@ -21,6 +21,7 @@
 ####################################################################################################################
 
 #Import libraries of data manipulation & visualization
+import os
 import streamlit as st
 import numpy as np 
 import pandas as pd 
@@ -30,6 +31,9 @@ import plotly as py
 import plotly.graph_objs as go
 import plotly_express as px
 from sklearn.preprocessing import MinMaxScaler
+
+#import parallelization libraries
+from multiprocessing.pool import ThreadPool
 
 #import the test-libraries
 from statsmodels.tsa.stattools import adfuller
@@ -43,12 +47,40 @@ from statsmodels.tsa.arima.model import ARIMA
 from keras.models import Sequential
 from keras.layers import Dense, LSTM
 
+#Set the number of processor used for the parallelization on different cores :
+pool = ThreadPool(processes=4)
+
+#Import DataSet - os.abspath() does not function with my streamlit app :
+path = "C:/Users/33646/Documents/GitHub/Portfolio/Microsoft_Stock_Price/Data/Microsoft_Stock.csv"
+
+#load the data with parallelization :
+@st.cache()
+def load_df(file_name):
+    df_xlsx = pd.read_csv(file_name)
+    return df_xlsx
+df = pool.apply_async(load_df, (path, )).get()
 
 
-#Import DataSet
-path = os.path.abspath("./Data/Microsoft_Stock.csv")
+# graph function :
+def graph_prediction(title
+                     ,Train
+                     ,Test = None
+                     ,Prediction = None
+                     ):
+    fig, ax = plt.subplots(figsize=(16,8))
+    plt.title(title)
+    plt.xlabel("Date", fontsize=18)
+    plt.ylabel("Close Price USD ($)", fontsize=18)
+    if Test is not None and Prediction is not None:
+        plt.plot(Train, color='blue', label='Test')
+        plt.plot(Test, color='green', label='Test')
+        plt.plot(Prediction, color='red', label='Test')
+        plt.legend(['Train', 'Test', 'Predictions'], loc='lower right')
+    else :
+        plt.legend('stock price', loc='lower right')
+    return st.pyplot(fig)
 
-df = pd.read_csv(path, parse_dates = ['Date'], index_col = 'Date')
+
 
 diff = df.Close.diff().dropna()
 result_adf = adfuller(df.Close)
@@ -83,13 +115,37 @@ x_test_LSTM = np.array(x_test_LSTM)
 x_train_LSTM = np.reshape(x_train_LSTM, (x_train_LSTM.shape[0], x_train_LSTM.shape[1], 1))
 x_test_LSTM = np.reshape(x_test_LSTM, (x_test_LSTM.shape[0], x_test_LSTM.shape[1], 1))
 
+train = df.Close[:n]
+valid = df.Close[n:]
+
+# function to train the model :
+@st.cache()
+def train_LSTM():
+    model_LSTM = Sequential()
+    model_LSTM.add(LSTM(units=50, return_sequences=True, input_shape=(x_train_LSTM.shape[1], 1)))
+    model_LSTM.add(LSTM(units=50, return_sequences=False))
+    model_LSTM.add(Dense(units=25))
+    model_LSTM.add(Dense(units=1))
+    model_LSTM.compile(optimizer='adam', loss='mean_squared_error')
+    model_LSTM.fit(x_train_LSTM, y_train_LSTM, batch_size=1, epochs=1)
+    predictions_LSTM = model_LSTM.predict(x_test_LSTM)
+    predictions_LSTM = scaler.inverse_transform(predictions_LSTM)
+    #plot the data
+    train = df.Close[:n]
+    valid = df.Close[n:]
+    valid = pd.DataFrame(valid)
+    valid["Predictions"] = predictions_LSTM
+    return valid
+
+valid = train_LSTM()
+    
 
 
+pages = st.sidebar.selectbox('Select the page', ['Introduction 🗺️', 'About the models 🧭', 'Forecasting 📈'])
 
-pages = st.sidebar.selectbox('Select the page', ['Introduction', 'About the models 🧭', 'Forecasting 📈'])
-
-if pages == "Introduction":
-    st.title("Introduction to the project")
+if pages == "Introduction 🗺️":
+    
+    st.title("Introduction to the project 🗺️")
     st.write("This Streamlit application will help you to predict the stock price of Microsoft.")
     st.write("To predict the price, we will use different model of machine learning and Deep Learning : ARIMA(ML) & LSTM(DL)\n")
     st.write("First, we will display the data and get some informations about the data.")
@@ -99,13 +155,20 @@ if pages == "Introduction":
     st.markdown(f"The dataframe begins at : {df.index.min()}, and finish at : {df.index.max()}.")
     st.markdown(f"The dataframe has {df.shape[0]} rows and {df.shape[1]} columns.")
     st.markdown(f"There are {df.isna().sum().sum()} missing values in the dataset.")
+    
 elif pages == "About the models 🧭":
+    
     model = st.sidebar.selectbox('Select the model', ['ARIMA', 'LSTM'])
     st.title("About the models 🧭")
+    
     if model == "ARIMA":
+        
         factor = st.sidebar.selectbox('In which variable do you want information ?',['Choose a factor','P', 'D', 'Q'])
+        
         if factor == "Choose a factor":
+            
             st.markdown("Three factors define ARIMA model, it is defined as ARIMA(p,d,q) where p, d, and q denote\n - p is the order of the AR term or the number of lagged (or past) observations to consider for autoregression.\n - d is the number of differencing required to make the time series stationary \n - q is the order of the MA term")
+        
         elif factor == "P":
             st.write(" P is the order of the Auto Regressive (AR) term. It refers to the number of lags to be used as predictors.")
             st.write("The below equation shows a typical autoregressive model. As the name suggests, the new values of this model depend purely on a weighted linear combination of its past values. Given that there are p past values, this is denoted as AR(p) or an autoregressive model of the order p. Epsilon ($\epsilon$) indicates the white noise.")
@@ -116,7 +179,9 @@ elif pages == "About the models 🧭":
             ax1.set_title("Difference once")
             plot_pacf(diff, ax=ax2, title="Partial Autocorrelation difference once")
             st.pyplot(fig)
+        
         elif factor == "D":
+            
             st.write("Autoregressive models are conceptually similar to linear regression, the assumptions made by the latter hold here as well. Time series data must be made stationary to remove any obvious correlation and collinearity with the past data. In stationary time-series data, the properties or value of a sample observation does not depend on the timestamp at which it is observed.")
             st.latex(r'''y_t' = y_t - y_{t-1} = y_t - B y_t = (1-B)y_t''')
             st.write("where B denotes the backshift operator")
@@ -128,7 +193,9 @@ elif pages == "About the models 🧭":
             st.markdown(f"ADF Statistics: {result_adf1[0]}")
             st.markdown(f"p-value: {result_adf1[1]}")
             st.write(f"The ARIMA model need {d_optimum} difference.")
+            
         elif factor == "Q":
+            
             st.write("q is the order of the moving average (MA) term. It refers to the number of lagged forecast errors that should go into the ARIMA model.")
             st.write("Here, the future value $Y_t$ is computed based on the errors $\epsilon_t$ made by the previous model. So, each successive term looks one step further into the past to incorporate the mistakes made by that model in the current computation. Based on the window we are willing to look past, the value of q is set. Thus, the below model can be independently denoted as a moving average order q or simply MA(q).")
             st.latex(r'''y_t = \epsilon_t + \theta_1 \epsilon_{t-1} + \theta_2 \epsilon_{t-2} + ... + \theta_q \epsilon_{t-q}''')
@@ -138,9 +205,13 @@ elif pages == "About the models 🧭":
             ax1.set_title("Difference once")
             plot_acf(diff, ax=ax2, title="Autocorrelation difference once")
             st.pyplot(fig)
+            
         else :
+            
             st.write("Choose a factor")
+            
     elif model == "LSTM":
+        
         st.write("According to Korstanje in his book, Advanced Forecasting with Python: “The LSTM cell adds long-term memory in an even more performant way because it allows even more parameters to be learned. This makes it the most powerful [Recurrent Neural Network] to do forecasting, especially when you have a longer-term trend in your data. LSTMs are one of the state-of-the-art models for forecasting at the moment,” (2021)")
         st.write("What is a neural network ?")
         st.write("A neural network is a structure of layer of neural network connected. It is not an algorithm but a combination of algorithms which allow us to do complex operations on the data.")
@@ -148,11 +219,17 @@ elif pages == "About the models 🧭":
         st.write("There is a class of neural network concepted to treat time series. The neurals of RNN have cellular memory, and the input is taken depending on this internal state, which is realized thanks to the loops of the neural network. It exists reccurent module of 'tanh' layers in the RNN which allow them to keep the information. However, not for a long time, this is why we need LSTM.")
         st.write("What is LSTM ?")
         st.write("This is a particular type of recurrent neural network which is able to learn dependencie over long time on the data. This is done because the recurent module of the model has a combination of 4 layers interacting between each other.")
+    
     else :
+        
         st.write("Choose a model")
+        
 elif pages == "Forecasting 📈":
+    
     model = st.sidebar.selectbox('Select the model', ['ARIMA', 'LSTM'])
+    
     if model == "ARIMA":
+        
         col1, col2 = st.columns(2)
         p = col1.selectbox("Select the number of P", [1,2,3,4,5,6,7,8,9,10])
         q = col2.selectbox("Select the number of Q", [1,2,3,4,5,6,7,8,9,10])
@@ -160,41 +237,17 @@ elif pages == "Forecasting 📈":
         result_ARIMA = arima_model.fit()
         Prediction_arima = result_ARIMA.predict(len(train_arima), len(train_arima)+len(test_arima)-1, typ='levels')
         #plot fitted values
-        plt.figure(figsize=(16,8))
-        plt.title("Model ARIMA")
-        plt.xlabel("Date", fontsize=18)
-        plt.ylabel("Close Price USD ($)", fontsize=18)
-        plt.plot(test_arima, color='green', label='Test')
-        plt.plot(train_arima, color='blue', label='Test')
-        plt.plot(Prediction_arima, color='red', label='Test')
-        plt.legend(['Train', 'Test', 'Predictions'], loc='lower right')
-        st.set_option('deprecation.showPyplotGlobalUse', False)
-        st.pyplot()
+        graph_prediction("Model ARIMA", train_arima, test_arima, Prediction_arima)
+        
     else :
-        model_LSTM = Sequential()
-        model_LSTM.add(LSTM(units=50, return_sequences=True, input_shape=(x_train_LSTM.shape[1], 1)))
-        model_LSTM.add(LSTM(units=50, return_sequences=False))
-        model_LSTM.add(Dense(units=25))
-        model_LSTM.add(Dense(units=1))
-        model_LSTM.compile(optimizer='adam', loss='mean_squared_error')
-        model_LSTM.fit(x_train_LSTM, y_train_LSTM, batch_size=1, epochs=1)
-        predictions_LSTM = model_LSTM.predict(x_test_LSTM)
-        predictions_LSTM = scaler.inverse_transform(predictions_LSTM)
-        #plot the data
-        train = df.Close[:n]
-        valid = df.Close[n:]
-        valid = pd.DataFrame(valid)
-        valid["Predictions"] = predictions_LSTM
-
+        
         #Visualize the data
-        plt.figure(figsize=(16,8))
-        plt.title("Model LSTM")
-        plt.xlabel("Date", fontsize=18)
-        plt.ylabel("Close Price USD ($)", fontsize=18)
-        plt.plot(train)
-        plt.plot(valid[["Close","Predictions"]])
-        plt.legend(['Train', 'Value', 'Predictions'], loc='lower right')
-        st.set_option('deprecation.showPyplotGlobalUse', False)
-        st.pyplot()
+        graph_prediction("Model LSTM",train, valid["Close"], valid["Predictions"])
+        
 else :
+    
     st.write("Choose a page")
+    
+    def graph(title):
+        plt.figure(figsize=(16,8))
+        plt.title(title)
