@@ -71,8 +71,8 @@ def graph_prediction(title
     plt.title(title)
     plt.xlabel("Date", fontsize=18)
     plt.ylabel("Close Price USD ($)", fontsize=18)
+    plt.plot(Train, color='blue', label='Test')
     if Test is not None and Prediction is not None:
-        plt.plot(Train, color='blue', label='Test')
         plt.plot(Test, color='green', label='Test')
         plt.plot(Prediction, color='red', label='Test')
         plt.legend(['Train', 'Test', 'Predictions'], loc='lower right')
@@ -81,6 +81,7 @@ def graph_prediction(title
     return st.pyplot(fig)
 
 
+############################ Data Transformation ############################
 
 diff = df.Close.diff().dropna()
 result_adf = adfuller(df.Close)
