@@ -136,7 +136,7 @@ valid = df.Close[n:]
 ## function to train the ARIMA
 
 def train_ARIMA(p,q):
-    arima_model = ARIMA(df.Close, order=(p,d_optimum,q))
+    arima_model = ARIMA(train_arima, order=(p,d_optimum,q))
     ARIMA_Model = arima_model.fit()
     Prediction_arima = ARIMA_Model.predict(len(train_arima), len(train_arima)+len(test_arima)-1, typ='levels')
     return ARIMA_Model,Prediction_arima
@@ -305,9 +305,11 @@ elif pages == "Forecasting 📈":
         p = col1.selectbox("Select the number of P", [0,1,2,3,4,5,6,7,8,9,10])
         q = col2.selectbox("Select the number of Q", [0,1,2,3,4,5,6,7,8,9,10])
         arima_model = ARIMA(df.Close, order=(p,d_optimum,q))
-        Prediction_arima = train_ARIMA(p,q)
+        ARIMA_Model, Prediction_arima = train_ARIMA(p,q)
         #plot fitted values
         graph_prediction("Model ARIMA", Date_train_arima,train_arima, Date_test_arima,test_arima, Prediction_arima)
+        st.write("Maybe I forecast on a too long period this is why it is totally out of context")
+        
         
     else :
         
