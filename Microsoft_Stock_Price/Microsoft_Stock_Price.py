@@ -131,7 +131,17 @@ x_test_LSTM = np.reshape(x_test_LSTM, (x_test_LSTM.shape[0], x_test_LSTM.shape[1
 train = df.Close[:n]
 valid = df.Close[n:]
 
-# function to train the model :
+# function to train the models :
+
+## function to train the ARIMA
+
+def train_ARIMA(p,q):
+    arima_model = ARIMA(df.Close, order=(p,d_optimum,q))
+    ARIMA_Model = arima_model.fit()
+    Prediction_arima = ARIMA_Model.predict(len(train_arima), len(train_arima)+len(test_arima)-1, typ='levels')
+    return ARIMA_Model,Prediction_arima
+
+## function to train the LSTM Model
 @st.cache()
 def train_LSTM():
     model_LSTM = Sequential()
@@ -181,7 +191,7 @@ if pages == "Introduction 🗺️":
     st.write("To predict the price, we will use different model of machine learning and Deep Learning : ARIMA(ML) & LSTM(DL)\n")
     st.write("First, we will display the data and get some informations about the data.")
     graph_prediction("Visualization of the time serie", df['Date'],df["Close"])
-    st.markdown(f"The dataframe begins at : {df.index.min()}, and finish at : {df.index.max()}.")
+    st.markdown(f"The dataframe begins on : {df.Date.dt.date.min()}, and finish at : {df.Date.dt.date.max()}.")
     st.markdown(f"The dataframe has {df.shape[0]} rows and {df.shape[1]} columns.")
     st.markdown(f"There are {df.isna().sum().sum()} missing values in the dataset.")
     
@@ -262,21 +272,19 @@ elif pages == "Setting of the models ⚙️" :
         col1, col2 = st.columns(2)
         p = col1.selectbox("Select the number of P", [0,1,2,3,4,5,6,7,8,9,10])
         q = col2.selectbox("Select the number of Q", [0,1,2,3,4,5,6,7,8,9,10])
-            
-        arima_model = ARIMA(df.Close, order=(p,d_optimum,q))
-        result_ARIMA = arima_model.fit()
-        Prediction_arima = result_ARIMA.predict(len(train_arima), len(train_arima)+len(test_arima)-1, typ='levels')
+          
+        ARIMA_Model,Prediction_arima = train_ARIMA(p,q)
             
         information = st.sidebar.selectbox("Select the information you want", ["Summary","Residuals","Accuracy Metrics"])
             
         if information == "Summary":
             
-            st.write(result_ARIMA.summary())
+            st.write(ARIMA_Model.summary())
             
         elif information == "Residuals":
                 
-            residuals = result_ARIMA.resid
-            fig = result_ARIMA.plot_diagnostics(figsize=(10,8))
+            residuals = pd.DataFrame(ARIMA_Model.resid)
+            fig = ARIMA_Model.plot_diagnostics(figsize=(10,8))
             st.pyplot(fig)
             
         elif information == "Accuracy Metrics":
@@ -297,11 +305,9 @@ elif pages == "Forecasting 📈":
         p = col1.selectbox("Select the number of P", [0,1,2,3,4,5,6,7,8,9,10])
         q = col2.selectbox("Select the number of Q", [0,1,2,3,4,5,6,7,8,9,10])
         arima_model = ARIMA(df.Close, order=(p,d_optimum,q))
-        result_ARIMA = arima_model.fit()
-        Prediction_arima = result_ARIMA.predict(len(train_arima), len(train_arima)+len(test_arima)-1, typ='levels')
+        Prediction_arima = train_ARIMA(p,q)
         #plot fitted values
         graph_prediction("Model ARIMA", Date_train_arima,train_arima, Date_test_arima,test_arima, Prediction_arima)
-        st.write(result_ARIMA.summary())
         
     else :
         
