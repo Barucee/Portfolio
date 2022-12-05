@@ -182,7 +182,8 @@ def forecast_accuracy(Model, forecast, actual):
     
 
 
-pages = st.sidebar.selectbox('Select the page', ['Introduction 🗺️', 'About the models 🧭', "Setting of the models ⚙️", 'Forecasting 📈'])
+pages = st.sidebar.selectbox('Select the page', ['Introduction 🗺️', 'About the models 🧭',
+                                                 "Setting of the models ⚙️", 'Forecasting 📈'])
 
 if pages == "Introduction 🗺️":
     
@@ -312,7 +313,8 @@ elif pages == "Setting of the models ⚙️" :
           
         ARIMA_Model,Prediction_arima = train_ARIMA(p,q)
             
-        information = st.sidebar.selectbox("Select the information you want", ["Summary","Residuals","Accuracy Metrics"])
+        information = st.sidebar.selectbox("Select the information you want", ["Summary","Residuals",
+                                                                               "Accuracy Metrics"])
             
         if information == "Summary":
             
@@ -352,7 +354,11 @@ elif pages == "Forecasting 📈":
     else :
         
         #Visualize the data
-        graph_prediction("Model LSTM", Date_train_LSTM,train, Date_test_LSTM, valid["Close"], valid["Predictions"])
+        graph_prediction("Model LSTM",
+                         Date_train_LSTM,train,
+                         Date_test_LSTM,
+                         valid["Close"],
+                         valid["Predictions"])
         
 else :
     
