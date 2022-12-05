@@ -187,13 +187,16 @@ pages = st.sidebar.selectbox('Select the page', ['Introduction 🗺️', 'About 
 if pages == "Introduction 🗺️":
     
     st.title("Introduction to the project 🗺️")
-    st.write("This Streamlit application will help you to predict the stock price of Microsoft.")
-    st.write("To predict the price, we will use different model of machine learning and Deep Learning : ARIMA(ML) & LSTM(DL)\n")
-    st.write("First, we will display the data and get some informations about the data.")
+    st.write("This Streamlit application will help you to predict the stock price of Microsoft.\
+            To predict the price, we will use different model of machine learning and Deep Learning :\
+            ARIMA(ML) & LSTM(DL)  \n \
+            First, we will display the data and get some informations about the data.")
+    
     graph_prediction("Visualization of the time serie", df['Date'],df["Close"])
-    st.markdown(f"The dataframe begins on : {df.Date.dt.date.min()}, and finish at : {df.Date.dt.date.max()}.")
-    st.markdown(f"The dataframe has {df.shape[0]} rows and {df.shape[1]} columns.")
-    st.markdown(f"There are {df.isna().sum().sum()} missing values in the dataset.")
+    
+    st.markdown(f"The dataframe begins on : {df.Date.dt.date.min()}, and finish at : {df.Date.dt.date.max()}.  \n"
+                f"The dataframe has {df.shape[0]} rows and {df.shape[1]} columns.  \n"
+                f"There are {df.isna().sum().sum()} missing values in the dataset.")
     
 elif pages == "About the models 🧭":
     
@@ -206,13 +209,22 @@ elif pages == "About the models 🧭":
         
         if factor == "Choose a factor":
             
-            st.markdown("Three factors define ARIMA model, it is defined as ARIMA(p,d,q) where p, d, and q denote\n - p is the order of the AR term or the number of lagged (or past) observations to consider for autoregression.\n - d is the number of differencing required to make the time series stationary \n - q is the order of the MA term")
+            st.write("Three factors define ARIMA model, it is defined as ARIMA(p,d,q) where p, d, and q \
+                    denote\n - p is the order of the AR term or the number of lagged (or past) observations \
+                    to consider for autoregression.\n - d is the number of differencing required to make the \
+                    time series stationary \n - q is the order of the MA term")
         
         elif factor == "P":
-            st.write(" P is the order of the Auto Regressive (AR) term. It refers to the number of lags to be used as predictors.")
-            st.write("The below equation shows a typical autoregressive model. As the name suggests, the new values of this model depend purely on a weighted linear combination of its past values. Given that there are p past values, this is denoted as AR(p) or an autoregressive model of the order p. Epsilon ($\epsilon$) indicates the white noise.")
+            st.write(" P is the order of the Auto Regressive (AR) term. It refers to the number of lags \
+                    to be used as predictors.  \n \
+                    The below equation shows a typical autoregressive model. As the name suggests, the \
+                    new values of this model depend purely on a weighted linear combination of its past \
+                    values. Given that there are p past values, this is denoted as AR(p) or an autoregressive \
+                    model of the order p. Epsilon ($\epsilon$) indicates the white noise.")
             st.latex(r'''Y_t = \alpha  + \beta_1 Y_{t-1} + \beta_2 Y_{t-2} + ... + \beta_p Y_{t-p} + \epsilon_1''')
-            st.write("We can find out the required number of AR terms by inspecting the Partial Autocorrelation (PACF) plot. The partial autocorrelation represents the correlation between the series and its lags.")
+            st.write("We can find out the required number of AR terms by inspecting the Partial Autocorrelation \
+                    (PACF) plot. The partial autocorrelation represents the correlation between the series \
+                    and its lags.")
             fig, (ax1,ax2) = plt.subplots(2,1, figsize=(10,10))
             ax1.plot(diff)
             ax1.set_title("Difference once")
@@ -221,22 +233,34 @@ elif pages == "About the models 🧭":
         
         elif factor == "D":
             
-            st.write("Autoregressive models are conceptually similar to linear regression, the assumptions made by the latter hold here as well. Time series data must be made stationary to remove any obvious correlation and collinearity with the past data. In stationary time-series data, the properties or value of a sample observation does not depend on the timestamp at which it is observed.")
+            st.write("Autoregressive models are conceptually similar to linear regression, the   \
+                    assumptions made by the latter hold here as well. Time series data must be made  \
+                    stationary to remove any obvious correlation and collinearity with the past data.  \
+                    In stationary time-series data, the properties or value of a sample observation does  \
+                    not depend on the timestamp at which it is observed.")
             st.latex(r'''y_t' = y_t - y_{t-1} = y_t - B y_t = (1-B)y_t''')
-            st.write("where B denotes the backshift operator")
-            st.write("We will use the augmented dickey fuller (ADF) test to check if the serie is stationnary.")
-            st.write("The null hypothesis of the ADF test is that the time series is non-stationnary. So, if the p-value of the test is upper than the significance level then we can reject the null hypothesis and infer that the time serie is indeed stationnary.")
-            st.markdown(f"ADF Statistics: {result_adf[0]}")
-            st.markdown(f"p-value: {result_adf[1]}")
-            st.write("The serie is not stationnary. We'll need to differentiate once to see.")
-            st.markdown(f"ADF Statistics: {result_adf1[0]}")
-            st.markdown(f"p-value: {result_adf1[1]}")
-            st.write(f"The ARIMA model need {d_optimum} difference.")
+            st.write("where B denotes the backshift operator.  \n \
+                    We will use the augmented dickey fuller (ADF) test to check if the serie is \
+                    stationnary.  \n \
+                    The null hypothesis of the ADF test is that the time series is non-stationnary.  \
+                    So, if the p-value of the test is upper than the significance level then we can \
+                    reject the null hypothesis and infer that the time serie is indeed stationnary.")
+            st.markdown(f"ADF Statistics: {result_adf[0]}  \n \
+                        p-value: {result_adf[1]}  \n \
+                        The serie is not stationnary. We'll need to differentiate once to see.")
+            st.markdown(f"ADF Statistics: {result_adf1[0]}  \n \
+                        p-value: {result_adf1[1]}  \n \
+                        The ARIMA model need {d_optimum} difference.")
             
         elif factor == "Q":
             
-            st.write("q is the order of the moving average (MA) term. It refers to the number of lagged forecast errors that should go into the ARIMA model.")
-            st.write("Here, the future value $Y_t$ is computed based on the errors $\epsilon_t$ made by the previous model. So, each successive term looks one step further into the past to incorporate the mistakes made by that model in the current computation. Based on the window we are willing to look past, the value of q is set. Thus, the below model can be independently denoted as a moving average order q or simply MA(q).")
+            st.write("q is the order of the moving average (MA) term. It refers to the number of lagged \
+                    forecast errors that should go into the ARIMA model.\n \
+                    Here, the future value $Y_t$ is computed based on the errors $\epsilon_t$ made by the \
+                    previous model. So, each successive term looks one step further into the past to \
+                    incorporate the mistakes made by that model in the current computation. Based on \
+                    the window we are willing to look past, the value of q is set. Thus, the below model \
+                    can be independently denoted as a moving average order q or simply MA(q).")
             st.latex(r'''y_t = \epsilon_t + \theta_1 \epsilon_{t-1} + \theta_2 \epsilon_{t-2} + ... + \theta_q \epsilon_{t-q}''')
             st.write("We can look at the ACF plot for the number of MA terms. ")
             fig, (ax1,ax2) = plt.subplots(2,1, figsize=(10,10))
@@ -251,13 +275,25 @@ elif pages == "About the models 🧭":
             
     elif model == "LSTM":
         
-        st.write("According to Korstanje in his book, Advanced Forecasting with Python: “The LSTM cell adds long-term memory in an even more performant way because it allows even more parameters to be learned. This makes it the most powerful [Recurrent Neural Network] to do forecasting, especially when you have a longer-term trend in your data. LSTMs are one of the state-of-the-art models for forecasting at the moment,” (2021)")
-        st.write("What is a neural network ?")
-        st.write("A neural network is a structure of layer of neural network connected. It is not an algorithm but a combination of algorithms which allow us to do complex operations on the data.")
-        st.write("What is a recurrent neural network ?")
-        st.write("There is a class of neural network concepted to treat time series. The neurals of RNN have cellular memory, and the input is taken depending on this internal state, which is realized thanks to the loops of the neural network. It exists reccurent module of 'tanh' layers in the RNN which allow them to keep the information. However, not for a long time, this is why we need LSTM.")
-        st.write("What is LSTM ?")
-        st.write("This is a particular type of recurrent neural network which is able to learn dependencie over long time on the data. This is done because the recurent module of the model has a combination of 4 layers interacting between each other.")
+        st.write("According to Korstanje in his book, Advanced Forecasting with Python: “The LSTM cell \
+                adds long-term memory in an even more performant way because it allows even more \
+                parameters to be learned. This makes it the most powerful [Recurrent Neural Network] \
+                to do forecasting, especially when you have a longer-term trend in your data. LSTMs are \
+                one of the state-of-the-art models for forecasting at the moment,” (2021) \n \
+                \n What is a neural network ?  \n \
+                \n A neural network is a structure of layer of neural network connected. It is not an \
+                algorithm but a combination of algorithms which allow us to do complex operations on the \
+                data.  \n \
+                \n What is a recurrent neural network ? \n \
+                \n There is a class of neural network concepted to treat time series. The neurals of RNN \
+                have cellular memory, and the input is taken depending on this internal state, which is \
+                realized thanks to the loops of the neural network. It exists reccurent module of 'tanh' \
+                layers in the RNN which allow them to keep the information. However, not for a long time, \
+                this is why we need LSTM.  \n \
+                \n What is LSTM ?  \n \
+                \n This is a particular type of recurrent neural network which is able to learn dependencie \
+                over long time on the data. This is done because the recurent module of the model has a \
+                combination of 4 layers interacting between each other.")
     
     else :
         
@@ -270,8 +306,8 @@ elif pages == "Setting of the models ⚙️" :
     if model == "ARIMA":
         
         col1, col2 = st.columns(2)
-        p = col1.selectbox("Select the number of P", [0,1,2,3,4,5,6,7,8,9,10])
-        q = col2.selectbox("Select the number of Q", [0,1,2,3,4,5,6,7,8,9,10])
+        p = col1.selectbox("Select the number of P", [0,1,2,3,4,5])
+        q = col2.selectbox("Select the number of Q", [0,1,2,3,4,5])
           
         ARIMA_Model,Prediction_arima = train_ARIMA(p,q)
             
@@ -293,7 +329,8 @@ elif pages == "Setting of the models ⚙️" :
     
     elif model == "LSTM" :
         
-        st.write("In work, I have to discover how to parallelize the fitting of different model of LSTM in order that it is not too much computing intensive")
+        st.write("In work, I have to discover how to parallelize the fitting of different model of LSTM \
+        in order that it is not too much computing intensive")
         
 elif pages == "Forecasting 📈":
     
