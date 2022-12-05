@@ -261,7 +261,8 @@ elif pages == "About the models 🧭":
                     incorporate the mistakes made by that model in the current computation. Based on \
                     the window we are willing to look past, the value of q is set. Thus, the below model \
                     can be independently denoted as a moving average order q or simply MA(q).")
-            st.latex(r'''y_t = \epsilon_t + \theta_1 \epsilon_{t-1} + \theta_2 \epsilon_{t-2} + ... + \theta_q \epsilon_{t-q}''')
+            st.latex(r'''y_t = \epsilon_t + \theta_1 \epsilon_{t-1} + \theta_2 \epsilon_{t-2} + ... +  \
+                    \theta_q \epsilon_{t-q}''')
             st.write("We can look at the ACF plot for the number of MA terms. ")
             fig, (ax1,ax2) = plt.subplots(2,1, figsize=(10,10))
             ax1.plot(diff)
@@ -339,8 +340,8 @@ elif pages == "Forecasting 📈":
     if model == "ARIMA":
         
         col1, col2 = st.columns(2)
-        p = col1.selectbox("Select the number of P", [0,1,2,3,4,5,6,7,8,9,10])
-        q = col2.selectbox("Select the number of Q", [0,1,2,3,4,5,6,7,8,9,10])
+        p = col1.selectbox("Select the number of P", [0,1,2,3,4,5])
+        q = col2.selectbox("Select the number of Q", [0,1,2,3,4,5])
         arima_model = ARIMA(df.Close, order=(p,d_optimum,q))
         ARIMA_Model, Prediction_arima = train_ARIMA(p,q)
         #plot fitted values
