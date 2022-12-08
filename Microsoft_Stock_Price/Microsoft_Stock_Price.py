@@ -47,6 +47,11 @@ from statsmodels.tsa.arima.model import ARIMA
 from keras.models import Sequential
 from keras.layers import Dense, LSTM
 
+#import the library to load the models :
+import joblib
+
+
+
 #Set the number of processor used for the parallelization on different cores :
 pool = ThreadPool(processes=4)
 
@@ -180,7 +185,14 @@ def forecast_accuracy(Model, forecast, actual):
                                    'mae': [mae], 'mpe': [mpe], 'rmse':[rmse], 
                                    'corr':[corr], 'minmax':[minmax]}))
     
+#retrieve the model and the prediction
+models_ARIMA = {}
 
+#load the models :
+models_ARIMA = {}
+for i in range(1,6):
+    for j in range(1,6):
+        models_ARIMA[f"ARIMA{i}{d_optimum}{j}"] = joblib.load(f'C:/Users/33646/Documents/GitHub/Portfolio/Microsoft_Stock_Price/Model/ARIMA/arima{i}{d_optimum}{j}.pkl') 
 
 pages = st.sidebar.selectbox('Select the page', ['Introduction 🗺️', 'About the models 🧭',
                                                  "Setting of the models ⚙️", 'Forecasting 📈'])
@@ -195,7 +207,7 @@ if pages == "Introduction 🗺️":
     
     graph_prediction("Visualization of the time serie", df['Date'],df["Close"])
     
-    st.markdown(f"The dataframe begins on : {df.Date.dt.date.min()}, and finish at : {df.Date.dt.date.max()}.  \n"
+    st.markdown(f"The dataframe begins on : {df.Date.dt.date.min()}, and finish on : {df.Date.dt.date.max()}.  \n"
                 f"The dataframe has {df.shape[0]} rows and {df.shape[1]} columns.  \n"
                 f"There are {df.isna().sum().sum()} missing values in the dataset.")
     
@@ -306,12 +318,13 @@ elif pages == "Setting of the models ⚙️" :
     model = st.sidebar.selectbox('Select the model', ['ARIMA', 'LSTM'])
     
     if model == "ARIMA":
-        
+    
         col1, col2 = st.columns(2)
         p = col1.selectbox("Select the number of P", [0,1,2,3,4,5])
         q = col2.selectbox("Select the number of Q", [0,1,2,3,4,5])
           
-        ARIMA_Model,Prediction_arima = train_ARIMA(p,q)
+        ARIMA_Model = models_ARIMA.get(f"ARIMA{p}{d_optimum}{q}")
+        prediction_ARIMA = ARIMA_Model.predict(start = len(train_arima), end = len(train_arima)+len(test_arima)-1, typ = 'levels')
             
         information = st.sidebar.selectbox("Select the information you want", ["Summary","Residuals",
                                                                                "Accuracy Metrics"])
@@ -328,7 +341,7 @@ elif pages == "Setting of the models ⚙️" :
             
         elif information == "Accuracy Metrics":
             
-            st.dataframe(forecast_accuracy("ARIMA",Prediction_arima, test_arima))
+            st.dataframe(forecast_accuracy("ARIMA",prediction_ARIMA, test_arima))
     
     elif model == "LSTM" :
         
@@ -347,7 +360,12 @@ elif pages == "Forecasting 📈":
         arima_model = ARIMA(df.Close, order=(p,d_optimum,q))
         ARIMA_Model, Prediction_arima = train_ARIMA(p,q)
         #plot fitted values
-        graph_prediction("Model ARIMA", Date_train_arima,train_arima, Date_test_arima,test_arima, Prediction_arima)
+        graph_prediction("Model ARIMA",
+                         Date_train_arima,
+                         train_arima,
+                         Date_test_arima,
+                         test_arima,
+                         Prediction_arima)
         st.write("Maybe I forecast on a too long period this is why it is totally out of context")
         
         
@@ -363,4 +381,11 @@ elif pages == "Forecasting 📈":
 else :
     
     st.write("Choose a page")
+
+
+
+
+        
+
+
     
