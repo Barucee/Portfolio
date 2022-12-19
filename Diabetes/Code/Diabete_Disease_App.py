@@ -54,13 +54,28 @@ from sklearn.metrics import classification_report
 from sklearn.model_selection import KFold
 import os
 
+#import parallel processing libraries
+from multiprocessing import cpu_count
+from multiprocessing.pool import ThreadPool
+import multiprocessing as mp
+
+
 #Make the machine learning runnin quicker
 patch_sklearn()
 
+# Fix the number of CPU used :
+nCPU = os.cpu_count()
+pool = ThreadPool(processes=nCPU)
+
 #import the dataset
 path = os.path.abspath("../Data/diabetes.csv")
-print(path)
-df = pd.read_csv(path)
+# import the data into a pandas dataframe :
+# Import DataSet with parallelization on the different Cpus
+def import_df(file_name):
+    df = pd.read_csv(file_name)
+    return df
+df = pool.apply_async(import_df, (path, )).get()
+
 df_raw = df.copy()
 
 
