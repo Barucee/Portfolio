@@ -56,11 +56,14 @@ from itertools import product
 from scipy.cluster import hierarchy 
 from scipy.spatial import distance_matrix 
 
-
 #import parallel processing libraries
 from multiprocessing import cpu_count
 from multiprocessing.pool import ThreadPool
 import multiprocessing as mp
+
+#import libraries to load the model
+import joblib
+
 
 #Make the machine learning runnin quicker
 patch_sklearn()
@@ -255,8 +258,8 @@ pivot_1 = pd.pivot_table(tmp, values='No_of_clusters', index='Min_samples', colu
 
 #let's proceed the K-means model with the optimal value of K
 
-kmeansmodel = KMeans(n_clusters=5, init='k-means++', n_init = 10 ,max_iter=300, tol=0.0001,  random_state= 111  , algorithm='elkan')
-kmeansmodel.fit(X)
+kmeansmodel = agglom_model = joblib.load('C:/Users/33646/Documents/GitHub/Portfolio/Mall_Customer_Segmentation/Model/Model/kmeansmodel.pkl')
+
 df["labels_kmeansmodel"] = kmeansmodel.labels_
 centroids3 = kmeansmodel.cluster_centers_
 
@@ -460,7 +463,7 @@ my_palette = plt.cm.get_cmap("crest", len(df.index))
  
 ############################ Agglomerative ############################
 
-agglom_model = AgglomerativeClustering(n_clusters=5, linkage='complete').fit(X)
+agglom_model = joblib.load('C:/Users/33646/Documents/GitHub/Portfolio/Mall_Customer_Segmentation/Model/Model/AgglomerativeClustering.pkl')
 
 df['Label_agglomerative'] = agglom_model.labels_
 
@@ -657,7 +660,8 @@ plt.figure(figsize=(1000/my_dpi, 1000/my_dpi), dpi=my_dpi)
 
 ############################ DBSCAN ############################
 #do DBSCAN clustering with the best parameters
-DBS_model = DBSCAN(eps=12.5, min_samples=4).fit(X)
+DBS_model = joblib.load('C:/Users/33646/Documents/GitHub/Portfolio/Mall_Customer_Segmentation/Model/Model/DBSCAN.pkl')
+
 
 df['label_DBSCAN'] = DBS_model.labels_
 
@@ -852,7 +856,8 @@ def make_spider_DBSCAN( row, title, color):
 
 ############################ DBSCAN ############################
 
-AF_model = AffinityPropagation(preference=-14600).fit(X)
+AF_model = joblib.load('C:/Users/33646/Documents/GitHub/Portfolio/Mall_Customer_Segmentation/Model/Model/AffinityPropagation.pkl')
+
 
 df['label_Affinity_Propagation'] = AF_model.labels_
 

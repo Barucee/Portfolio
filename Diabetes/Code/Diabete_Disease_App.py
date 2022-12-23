@@ -59,6 +59,9 @@ from multiprocessing import cpu_count
 from multiprocessing.pool import ThreadPool
 import multiprocessing as mp
 
+#import the library to save the models :
+import joblib
+
 
 #Make the machine learning runnin quicker
 patch_sklearn()
@@ -68,7 +71,7 @@ nCPU = os.cpu_count()
 pool = ThreadPool(processes=nCPU)
 
 #import the dataset
-path = os.path.abspath("../Data/diabetes.csv")
+path = "C:/Users/33646/Documents/GitHub/Portfolio/Diabetes/Data/diabetes.csv"
 # import the data into a pandas dataframe :
 # Import DataSet with parallelization on the different Cpus
 def import_df(file_name):
@@ -232,123 +235,167 @@ scaler = StandardScaler()
 X = scaler.fit_transform(X)
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2,random_state=10)
 
-cv = KFold(n_splits=10, random_state=1, shuffle=True)
-
 ###### function confusion matrix ######
 
 def plot_confusion_matrix(y_pred):
-    acc = round(accuracy_score(y, y_pred), 2)
-    cm = confusion_matrix(y, y_pred)
+    acc = round(accuracy_score(y_test, y_pred), 2)
+    cm = confusion_matrix(y_test, y_pred)
     fig, ax = plt.subplots(figsize=(7,7)) 
     sns.set(font_scale=3.0)
     sns.heatmap(cm, annot=True, fmt='d',annot_kws={'size': 30})
     plt.xlabel('y prediction')
-    plt.ylabel('y')
+    plt.ylabel('y_test')
+
+##################################### Model Selection #####################################
+
+def load_model(name):
+    model = joblib.load(f'C:/Users/33646/Documents/GitHub/Portfolio/Diabetes/Model/{name}.pkl')
+    return model
 
 ###### Logistic Regression ######
 
-LR = LogisticRegression(solver='liblinear', penalty="l2", C=0.001)
-y_pred_LR = cross_val_predict(LR, X, y, cv=10)
+LR = load_model('LogisticRegression')
+y_pred_LR = LR.predict(X_test)
 matrix_LR = plot_confusion_matrix(y_pred_LR)
-Results_LR = pd.DataFrame.from_dict({'Model': ['Logistic Regression'], 'Accuracy': [accuracy_score(y, y_pred_LR)], 'Precision': [precision_score(y, y_pred_LR)], 'Recall': [recall_score(y, y_pred_LR)], 'F1': [f1_score(y, y_pred_LR)], 'AUC': [roc_auc_score(y, y_pred_LR)]})
+Results_LR = pd.DataFrame.from_dict({'Model': ['Logistic Regression'],
+                                     'Accuracy': [accuracy_score(y_test, y_pred_LR)], 
+                                     'Precision': [precision_score(y_test, y_pred_LR)],
+                                     'Recall': [recall_score(y_test, y_pred_LR)],
+                                     'F1': [f1_score(y_test, y_pred_LR)],
+                                     'AUC': [roc_auc_score(y_test, y_pred_LR)]})
 
 ###### Linear Discriminant Analysis ######
 
-LDA = LinearDiscriminantAnalysis(solver="svd")
-y_pred_LDA = cross_val_predict(LDA, X, y, cv=10)
+LDA = load_model('LinearDiscriminantAnalysis')
+y_pred_LDA = LDA.predict(X_test)
 matrix_LDA = plot_confusion_matrix(y_pred_LDA)
-Results_LDA = pd.DataFrame.from_dict({'Model': ['Linear Discriminant analysis'], 'Accuracy': [accuracy_score(y, y_pred_LDA)], 'Precision': [precision_score(y, y_pred_LDA)], 'Recall': [recall_score(y, y_pred_LDA)], 'F1': [f1_score(y, y_pred_LDA)], 'AUC': [roc_auc_score(y, y_pred_LDA)]})
+Results_LDA = pd.DataFrame.from_dict({'Model': ['Linear Discriminant analysis'],
+                                      'Accuracy': [accuracy_score(y_test, y_pred_LDA)], 
+                                      'Precision': [precision_score(y_test, y_pred_LDA)],
+                                      'Recall': [recall_score(y_test, y_pred_LDA)],
+                                      'F1': [f1_score(y_test, y_pred_LDA)],
+                                      'AUC': [roc_auc_score(y_test, y_pred_LDA)]})
 
 ###### KNeighbors Classifier ######
 
-KNN = KNeighborsClassifier(n_neighbors=29)
-y_pred_KNN = cross_val_predict(KNN, X, y, cv=10)
+KNN = load_model('KNeighborsClassifier')
+y_pred_KNN = KNN.predict(X_test)
 matrix_KNN = plot_confusion_matrix(y_pred_KNN)
-Results_KNN = pd.DataFrame.from_dict({'Model': ['K-Neighbors Classifier'], 'Accuracy': [accuracy_score(y, y_pred_KNN)], 'Precision': [precision_score(y, y_pred_KNN)], 'Recall': [recall_score(y, y_pred_KNN)], 'F1': [f1_score(y, y_pred_KNN)], 'AUC': [roc_auc_score(y, y_pred_KNN)]})
+Results_KNN = pd.DataFrame.from_dict({'Model': ['K-Neighbors Classifier'],
+                                      'Accuracy': [accuracy_score(y_test, y_pred_KNN)],
+                                      'Precision': [precision_score(y_test, y_pred_KNN)],
+                                      'Recall': [recall_score(y_test, y_pred_KNN)],
+                                      'F1': [f1_score(y_test, y_pred_KNN)],
+                                      'AUC': [roc_auc_score(y_test, y_pred_KNN)]})
 
 ###### Decision Tree Classifier ######
 
-DTC = DecisionTreeClassifier(criterion='gini', max_depth=4)
-y_pred_DTC = cross_val_predict(DTC, X, y, cv=10)
+DTC = load_model('DecisionTreeClassifier')
+y_pred_DTC = DTC.predict(X_test)
 matrix_DTC = plot_confusion_matrix(y_pred_DTC)
-Results_DTC = pd.DataFrame.from_dict({'Model': ['Decision Tree Classifier'], 'Accuracy': [accuracy_score(y, y_pred_DTC)], 'Precision': [precision_score(y, y_pred_DTC)], 'Recall': [recall_score(y, y_pred_DTC)], 'F1': [f1_score(y, y_pred_DTC)], 'AUC': [roc_auc_score(y, y_pred_DTC)]})
+Results_DTC = pd.DataFrame.from_dict({'Model': ['Decision Tree Classifier'],
+                                      'Accuracy': [accuracy_score(y_test, y_pred_DTC)],
+                                      'Precision': [precision_score(y_test, y_pred_DTC)],
+                                      'Recall': [recall_score(y_test, y_pred_DTC)],
+                                      'F1': [f1_score(y_test, y_pred_DTC)],
+                                      'AUC': [roc_auc_score(y_test, y_pred_DTC)]})
 
 ###### Random Forest Classifier ######
 
-RFC = RandomForestClassifier(n_estimators=300, max_depth=12, min_samples_split=9)
-y_pred_RFC = cross_val_predict(RFC, X, y, cv=10)
+RFC = load_model('RandomForestClassifier')
+y_pred_RFC = RFC.predict(X_test)
 matrix_RFC = plot_confusion_matrix(y_pred_RFC)
-Results_RFC = pd.DataFrame.from_dict({'Model': ['Random Forest Classifier'], 'Accuracy': [accuracy_score(y, y_pred_RFC)], 'Precision': [precision_score(y, y_pred_RFC)], 'Recall': [recall_score(y, y_pred_RFC)], 'F1': [f1_score(y, y_pred_RFC)], 'AUC': [roc_auc_score(y, y_pred_RFC)]})
+Results_RFC = pd.DataFrame.from_dict({'Model': ['Random Forest Classifier'],
+                                      'Accuracy': [accuracy_score(y_test, y_pred_RFC)],
+                                      'Precision': [precision_score(y_test, y_pred_RFC)],
+                                      'Recall': [recall_score(y_test, y_pred_RFC)],
+                                      'F1': [f1_score(y_test, y_pred_RFC)],
+                                      'AUC': [roc_auc_score(y_test, y_pred_RFC)]})
 
 ###### Gaussian NB ######
 
-GNB = GaussianNB(var_smoothing=0.12328467394420659)
-y_pred_GNB = cross_val_predict(GNB, X, y, cv=10)
+GNB = load_model('GaussianNB')
+y_pred_GNB = GNB.predict(X_test)
 matrix_GNB = plot_confusion_matrix(y_pred_GNB)
-Results_GNB = pd.DataFrame.from_dict({'Model': ['Gaussian NB'], 'Accuracy': [accuracy_score(y, y_pred_GNB)], 'Precision': [precision_score(y, y_pred_GNB)], 'Recall': [recall_score(y, y_pred_GNB)], 'F1': [f1_score(y, y_pred_GNB)], 'AUC': [roc_auc_score(y, y_pred_GNB)]})
+Results_GNB = pd.DataFrame.from_dict({'Model': ['Gaussian NB'],
+                                      'Accuracy': [accuracy_score(y_test, y_pred_GNB)],
+                                      'Precision': [precision_score(y_test, y_pred_GNB)],
+                                      'Recall': [recall_score(y_test, y_pred_GNB)],
+                                      'F1': [f1_score(y_test, y_pred_GNB)],
+                                      'AUC': [roc_auc_score(y_test, y_pred_GNB)]})
 
 ###### Support Vector Machine ######
 
-SVC_model = LinearSVC(max_iter=10000)
-y_pred_SVC = cross_val_predict(SVC_model, X, y, cv=10)
+SVC_model = load_model('LinearSVC')
+y_pred_SVC = SVC_model.predict(X_test)
 matrix_SVC = plot_confusion_matrix(y_pred_SVC)
-Results_SVC = pd.DataFrame.from_dict({'Model': ['Support Vector Machine'], 'Accuracy': [accuracy_score(y, y_pred_SVC)], 'Precision': [precision_score(y, y_pred_SVC)], 'Recall': [recall_score(y, y_pred_SVC)], 'F1': [f1_score(y, y_pred_SVC)], 'AUC': [roc_auc_score(y, y_pred_SVC)]})
+Results_SVC = pd.DataFrame.from_dict({'Model': ['Support Vector Machine'],
+                                      'Accuracy': [accuracy_score(y_test, y_pred_SVC)],
+                                      'Precision': [precision_score(y_test, y_pred_SVC)],
+                                      'Recall': [recall_score(y_test, y_pred_SVC)],
+                                      'F1': [f1_score(y_test, y_pred_SVC)],
+                                      'AUC': [roc_auc_score(y_test, y_pred_SVC)]})
 
 ###### Gradient Boosting ######
 
-GBC = GradientBoostingClassifier(learning_rate=0.1,max_depth=2,min_samples_split=5)
-y_GBC = cross_val_predict(GBC, X, y, cv=10)
+GBC = load_model('GradientBoostingClassifier')
+y_GBC = GBC.predict(X_test)
 matrix_GBC = plot_confusion_matrix(y_GBC)
-Results_GBC = pd.DataFrame.from_dict({'Model': ['Gradient Boosting Classifier'], 'Accuracy': [accuracy_score(y, y_GBC)], 'Precision': [precision_score(y, y_GBC)], 'Recall': [recall_score(y, y_GBC)], 'F1': [f1_score(y, y_GBC)], 'AUC': [roc_auc_score(y, y_GBC)]})
+Results_GBC = pd.DataFrame.from_dict({'Model': ['Gradient Boosting Classifier'],
+                                      'Accuracy': [accuracy_score(y_test, y_GBC)],
+                                      'Precision': [precision_score(y_test, y_GBC)],
+                                      'Recall': [recall_score(y_test, y_GBC)],
+                                      'F1': [f1_score(y_test, y_GBC)],
+                                      'AUC': [roc_auc_score(y_test, y_GBC)]})
 
 ###### LightGBM ######
 
-LGBMC = LGBMClassifier(colsample_bytree=0.7,max_depth=15,min_split_gain=0.4, n_estimators=400, num_leaves=50, reg_alpha=1.1, reg_lambda=1.2, subsample=0.9, subsample_freq=20)
-y_LGBMC = cross_val_predict(LGBMC, X, y, cv=10)
+LGBMC = load_model('LGBMClassifier')
+y_LGBMC = LGBMC.predict(X_test)
 matrix_LGBMC = plot_confusion_matrix(y_LGBMC)
-Results_LGBMC = pd.DataFrame.from_dict({'Model': ['LightGBM Classifier'], 'Accuracy': [accuracy_score(y, y_LGBMC)], 'Precision': [precision_score(y, y_LGBMC)], 'Recall': [recall_score(y, y_LGBMC)], 'F1': [f1_score(y, y_LGBMC)], 'AUC': [roc_auc_score(y, y_LGBMC)]})
+Results_LGBMC = pd.DataFrame.from_dict({'Model': ['LightGBM Classifier'],
+                                        'Accuracy': [accuracy_score(y_test, y_LGBMC)],
+                                        'Precision': [precision_score(y_test, y_LGBMC)],
+                                        'Recall': [recall_score(y_test, y_LGBMC)],
+                                        'F1': [f1_score(y_test, y_LGBMC)],
+                                        'AUC': [roc_auc_score(y_test, y_LGBMC)]})
 
 ###### XG-Boost ######
 
-XGB = XGBClassifier(colsample_bytree = 1.0, gamma = 2, max_depth=3,min_child_weight=10, subsample=1)
-y_XGB = cross_val_predict(XGB, X, y, cv=10)
+XGB = load_model('XGBClassifier')
+y_XGB = XGB.predict(X_test)
 matrix_XGB = plot_confusion_matrix(y_XGB)
-Results_XGB = pd.DataFrame.from_dict({'Model': ['XG-Boost Classifier'], 'Accuracy': [accuracy_score(y, y_XGB)], 'Precision': [precision_score(y, y_XGB)], 'Recall': [recall_score(y, y_XGB)], 'F1': [f1_score(y, y_XGB)], 'AUC': [roc_auc_score(y, y_XGB)]})
+Results_XGB = pd.DataFrame.from_dict({'Model': ['XG-Boost Classifier'],
+                                      'Accuracy': [accuracy_score(y_test, y_XGB)],
+                                      'Precision': [precision_score(y_test, y_XGB)],
+                                      'Recall': [recall_score(y_test, y_XGB)],
+                                      'F1': [f1_score(y_test, y_XGB)],
+                                      'AUC': [roc_auc_score(y_test, y_XGB)]})
 
 ###### MLP classifier ######
 
-MLP = MLPClassifier()
-y_MLP = cross_val_predict(MLP, X, y, cv=10)
+MLP = load_model('MLPClassifier')
+y_MLP = MLP.predict(X_test)
 matrix_MLP = plot_confusion_matrix(y_MLP)
-Results_MLP = pd.DataFrame.from_dict({'Model': ['MLP Classifier'], 'Accuracy': [accuracy_score(y, y_MLP)], 'Precision': [precision_score(y, y_MLP)], 'Recall': [recall_score(y, y_MLP)], 'F1': [f1_score(y, y_MLP)], 'AUC': [roc_auc_score(y, y_MLP)]})
+Results_MLP = pd.DataFrame.from_dict({'Model': ['MLP Classifier'],
+                                      'Accuracy': [accuracy_score(y_test, y_MLP)],
+                                      'Precision': [precision_score(y_test, y_MLP)],
+                                      'Recall': [recall_score(y_test, y_MLP)],
+                                      'F1': [f1_score(y_test, y_MLP)],
+                                      'AUC': [roc_auc_score(y_test, y_MLP)]})
 
 ###### Neural Network ######
-ANN_model = tf.keras.models.Sequential()
-ANN_model.add(tf.keras.layers.Dense(units=400, activation='relu', input_shape=(8,)))
-ANN_model.add(tf.keras.layers.Dropout(0.2))
-
-ANN_model.add(tf.keras.layers.Dense(units=400, activation='relu'))
-ANN_model.add(tf.keras.layers.Dropout(0.2))
-
-ANN_model.add(tf.keras.layers.Dense(units=1, activation='sigmoid'))
-
-ANN_model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
-    #We use binary_crossentropy because we have binary outcome
-
-history = ANN_model.fit(X_train, y_train, epochs=200)
+ANN_model =  tf.keras.models.load_model('C:/Users/33646/Documents/GitHub/Portfolio/Diabetes/Model/ANN_model.h5')
 
 y_ANN = ANN_model.predict(X_test)
-y_pred_ANN = (y_ANN > 0.5)
 
-acc = round(accuracy_score(y_test, y_pred_ANN), 2)
-cm_ann = confusion_matrix(y_test, y_pred_ANN)
-matrix_ANN, ax = plt.subplots(figsize=(7,7)) 
-sns.set(font_scale=3.0)
-matrix_ANN = sns.heatmap(cm_ann, annot=True, fmt='d',annot_kws={'size': 30})
-plt.xlabel('y prediction')
-plt.ylabel('y')
+#Now we'll convert the probabilities into 0 and 1
+y_ANN = np.where(y_ANN >= 0.5, 1, 0)
 
-Results_ANN = pd.DataFrame.from_dict({'Model': ['Neural Network'], 'Accuracy': [accuracy_score(y_test, y_pred_ANN)], 'Precision': [precision_score(y_test, y_pred_ANN)], 'Recall': [recall_score(y_test, y_pred_ANN)], 'F1': [f1_score(y_test, y_pred_ANN)], 'AUC': [roc_auc_score(y_test, y_pred_ANN)]})
+
+matrix_ANN = plot_confusion_matrix(y_ANN)
+
+Results_ANN = pd.DataFrame.from_dict({'Model': ['Neural Network'], 'Accuracy': [accuracy_score(y_test, y_ANN)], 'Precision': [precision_score(y_test, y_ANN)], 'Recall': [recall_score(y_test, y_ANN)], 'F1': [f1_score(y_test, y_ANN)], 'AUC': [roc_auc_score(y_test, y_ANN)]})
 
 
 ###### merge of the conclusion dataframe ######
@@ -356,9 +403,6 @@ Results_ANN = pd.DataFrame.from_dict({'Model': ['Neural Network'], 'Accuracy': [
 Results = pd.concat([Results_LR, Results_LDA, Results_KNN, Results_DTC,Results_RFC,Results_GNB,Results_SVC,Results_GBC,Results_LGBMC,Results_XGB,Results_MLP, Results_ANN], ignore_index=True)
 
 
-###### Classification app ######
-
-MLP.fit(X,y)
 
 
 
